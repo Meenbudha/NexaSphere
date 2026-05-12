@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 # 1. Configuration & Persona
 # This instruction tells the bot exactly how to behave and what NexaSphere is.
 SYSTEM_PROMPT = """
@@ -23,7 +25,11 @@ If asked about something unrelated to tech or NexaSphere, politely steer the con
 """
 
 # 2. Initialize Gemini
-API_KEY = "AIzaSyBGuAv-NvJwUkjwrz3RJNaDSiFMihFWvLo"
+API_KEY = os.getenv("GEMINI_API_KEY")
+
+if not API_KEY:
+    raise RuntimeError("GEMINI_API_KEY is not configured")
+
 genai.configure(api_key=API_KEY)
 
 model = genai.GenerativeModel(
@@ -32,9 +38,10 @@ model = genai.GenerativeModel(
 )
 
 app = FastAPI(title="NexaSphere AI Core")
-
+from routers import forms
+app.include_router(forms.router)
 # 3. CORS Configuration
-origins = os.getenv("CORS_ORIGIN", "http://localhost:5173,http://localhost:5174,https://nexasphere-glbajaj.vercel.app,https://admin-nexasphere.vercel.app").split(",")
+origins = os.getenv("CORS_ORIGIN", "http://localhost:5173,http://localhost:5174,https://nexasphere-glbajaj.vercel.app,https://admin-nexasphere.vercel.app,https://nexa-sphere-sigma.vercel.app,https://admin-dashboard-navy-pi-22.vercel.app").split(",")
 
 app.add_middleware(
     CORSMiddleware,
@@ -60,11 +67,14 @@ async def chat_with_ai(request: ChatRequest):
         return {"reply": response.text}
 
     except Exception as e:
-        error_msg = str(e)
-        print(f"DEBUG ERROR: {error_msg}")
+        error_code = getattr(e, "status_code", None)
+        logger.warning(
+            "Gemini request failed",
+            extra={"error_type": type(e).__name__, "status_code": error_code},
+        )
         
         # Friendly error handling for Quota limits
-        if "429" in error_msg:
+        if error_code == 429 or getattr(getattr(e, "response", None), "status_code", None) == 429:
             return {"reply": "Nexa-AI is currently at peak capacity (Quota Limit). Please wait 60 seconds."}
         
         return {"reply": "Nexa-AI Core Offline. Connection recalibrating..."}
