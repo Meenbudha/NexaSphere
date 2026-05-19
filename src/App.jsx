@@ -42,6 +42,9 @@ import { activityPages }   from './data/activities/index';
 import { events as fallbackEvents } from './data/eventsData';
 import nexasphereLogo      from './assets/images/logos/nexasphere-logo.png';
 
+import Terminal from './components/developer/Terminal';
+import { useDeveloperMode } from './hooks/useDeveloperMode';
+
 const MNH = 88, DNH = 64;
 const TABS = ['Home','Activities','Events','Projects','Roadmaps','About','Team','Contact'];
 
@@ -183,6 +186,7 @@ export default function App() {
   const [theme,      setTheme]      = useState(() => localStorage.getItem('ns-theme') || 'dark');
   const [eventsData, setEventsData] = useState(fallbackEvents);
   const [searchOpen, setSearchOpen] = useState(false);   // ← Search state
+  const { isOpen: isTerminalOpen, closeTerminal } = useDeveloperMode();
 
   useEffect(()=>{
     document.documentElement.setAttribute('data-theme', theme);
@@ -482,6 +486,15 @@ export default function App() {
         events={eventsData}
         onNavigate={onNavigate}
         onEventClick={onKSSClick}
+      />
+
+      {/* ── Developer Terminal ── */}
+      <Terminal 
+        isOpen={isTerminalOpen} 
+        onClose={closeTerminal} 
+        theme={theme} 
+        setTheme={setTheme} 
+        onNavigate={onTab} 
       />
     </>
   );
