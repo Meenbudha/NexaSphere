@@ -59,15 +59,12 @@ export function getConnectedSSEClientsCount() {
  * SSE middleware setup
  */
 export function setupSSEHeaders(req, res, next) {
-  const allowedOrigin = process.env.PUBLIC_APP_URL || process.env.CORS_ORIGIN?.split(',')[0]?.trim() || 'http://localhost:5173';
-
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
-  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+  // The app-level cors() middleware already selected the correct origin.
+  // Do not overwrite it here, or multi-origin deployments break.
 
   // Send initial connection message
   res.write(': SSE connection established\n\n');
