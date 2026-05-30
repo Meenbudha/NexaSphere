@@ -63,21 +63,33 @@ export default defineConfig({
       // Ensure all deps are bundled (not externalized)
       external: [],
       output: {
-        manualChunks: {
-          // Split large vendor libraries into separate chunks for better caching
-          "vendor-react": ["react", "react-dom", "react-router-dom"],
-          "vendor-framer": ["framer-motion"],
-          "vendor-recharts": ["recharts"],
-          "vendor-tensorflow": ["@tensorflow/tfjs"],
-          "vendor-fullcalendar": [
-            "@fullcalendar/react",
-            "@fullcalendar/daygrid",
-            "@fullcalendar/timegrid",
-            "@fullcalendar/interaction",
-          ],
-          "vendor-sentry": ["@sentry/react", "@sentry/tracing"],
-          "vendor-pdf": ["jspdf", "html2canvas", "dompurify"],
-          "vendor-i18n": ["i18next", "react-i18next", "i18next-browser-languagedetector"],
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("react") || id.includes("react-dom") || id.includes("react-router-dom")) {
+              return "vendor-react";
+            }
+            if (id.includes("framer-motion")) {
+              return "vendor-framer";
+            }
+            if (id.includes("recharts")) {
+              return "vendor-recharts";
+            }
+            if (id.includes("@tensorflow/tfjs")) {
+              return "vendor-tensorflow";
+            }
+            if (id.includes("@fullcalendar")) {
+              return "vendor-fullcalendar";
+            }
+            if (id.includes("@sentry")) {
+              return "vendor-sentry";
+            }
+            if (id.includes("jspdf") || id.includes("html2canvas") || id.includes("dompurify")) {
+              return "vendor-pdf";
+            }
+            if (id.includes("i18next") || id.includes("react-i18next") || id.includes("i18next-browser-languagedetector")) {
+              return "vendor-i18n";
+            }
+          }
         },
       },
     },
