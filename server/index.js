@@ -64,6 +64,11 @@ app.use(express.json({ limit: '512kb' }));
 app.use(morgan('combined'));
 app.use(performanceMonitor);
 
+// Global API rate limiter — protects all /api routes from request flooding
+// Previously missing: the middleware was correctly defined in rateLimiter.js
+// but never mounted, leaving every API endpoint without baseline protection.
+app.use("/api", apiRateLimiter);
+
 const adminEvents = new EventEmitter();
 
 function requestLogger(req, res, next) {
@@ -583,26 +588,8 @@ app.get('/api/admin/membership', adminAuth, async (req, res) => {
   }
 });
 
-app.post('/api/admin/login', authRateLimiter, adminAuthMiddleware.login);
-app.post('/api/admin/logout', adminAuthMiddleware.logout);
 app.get('/api/admin/me', adminAuth, (req, res) => {
   return res.json({ username: req.adminSession.username });
-});
-app.use('/api/admin/analytics', adminAuth, analyticsRouter);
-app.use('/api/admin/metrics', adminAuth, adminStreamRouter);
-
-app.get('/api/admin/events', adminAuth, async (req, res) => {
-  const { page, limit } = parsePagination(req.query);
-  const { events, total } = await listEventsStore({ page, limit });
-  return res.json({
-    events,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit) || 1,
-    },
-  });
 });
 
 // Real-time Push Subscriber channels
@@ -743,14 +730,6 @@ function clearPasskeyAttempts(username, ip) {
   failedPasskeyAttempts.delete(key);
 }
 
-app.post('/api/forms/membership', formRateLimiter, (req, res) =>
-  handleForm('membership', req, res)
-);
-app.post('/api/forms/recruitment', formRateLimiter, (req, res) =>
-  handleForm('recruitment', req, res)
-);
-app.post('/api/core-team/apply', formRateLimiter, (req, res) => handleForm('core_team', req, res));
-
 // Server-side notifications API (simple in-memory store)
 
 app.get('/api/notifications', (req, res) => {
@@ -761,24 +740,6 @@ app.get('/api/notifications', (req, res) => {
     return res.json({ notifications: list });
   } catch (err) {
     return res.status(500).json({ error: err.message });
-  }
-});
-
-// Portfolio System API Endpoints
-app.get('/api/portfolio/:username', async (req, res) => {
-  try {
-    const username = String(req.params.username || '').trim();
-    if (!username) {
-      return res.status(400).json({ error: 'Username is required' });
-    }
-    const portfolio = await portfolioRepository.getByUsername(username);
-    if (!portfolio) {
-      return res.status(404).json({ error: 'Portfolio not found' });
-    }
-    return res.json(portfolio);
-  } catch (err) {
-    console.error('Error fetching portfolio:', err);
-    return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 });
 
