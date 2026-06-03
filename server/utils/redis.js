@@ -22,24 +22,30 @@ export function getRedisClient() {
 export async function getCachedQuery(key, queryFn, ttlSeconds = 300) {
   const client = getRedisClient();
   
+  // Try to read from cache first
+  let cached = null;
   try {
-    const cached = await client.get(key);
+    cached = await client.get(key);
     if (cached) {
       return JSON.parse(cached);
     }
-    
-    const result = await queryFn();
-    
-    // Fire and forget caching
+  } catch (err) {
+    logger.warn('Redis cache read error, falling back to database query:', err);
+  }
+  
+  // Cache miss or Redis error — run queryFn exactly once
+  const result = await queryFn();
+  
+  // Best-effort cache write
+  try {
     client.set(key, JSON.stringify(result), 'EX', ttlSeconds).catch(err => {
       logger.error('Error setting Redis cache:', err);
     });
-    
-    return result;
   } catch (err) {
-    logger.warn('Redis cache error, falling back to database query:', err);
-    return await queryFn();
+    logger.warn('Redis cache write error:', err);
   }
+  
+  return result;
 }
 
 export function clearCache(keyPattern) {
@@ -51,24 +57,25 @@ export function clearCache(keyPattern) {
       count: 100
     });
     
-    const keys = [];
+    let deletedCount = 0;
+    const deletePromises = [];
     
     stream.on('data', (resultKeys) => {
-      for (let i = 0; i < resultKeys.length; i++) {
-        keys.push(resultKeys[i]);
+      if (resultKeys.length > 0) {
+        // Delete in batches as they arrive to avoid unbounded memory usage
+        const promise = client.del(...resultKeys)
+          .then(count => { deletedCount += count; })
+          .catch(err => { logger.error('Error deleting cache keys batch:', err); });
+        deletePromises.push(promise);
       }
     });
     
     stream.on('end', async () => {
-      if (keys.length > 0) {
-        try {
-          await client.del(...keys);
-          resolve(keys.length);
-        } catch (err) {
-          reject(err);
-        }
-      } else {
-        resolve(0);
+      try {
+        await Promise.all(deletePromises);
+        resolve(deletedCount);
+      } catch (err) {
+        reject(err);
       }
     });
     

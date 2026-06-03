@@ -4,9 +4,11 @@
  */
 
 import { Server } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
 import logger from '../utils/logger.js';
 import { getAdminSession } from '../repositories/adminSessionsRepository.js';
 import { validationMiddleware } from '../sockets/validationMiddleware.js';
+import { getRedisClient } from '../utils/redis.js';
 
 let io = null;
 const connectedUsers = new Map();
@@ -210,10 +212,7 @@ function parseBearer(authHeader) {
  * Initialize Socket.IO
  * @param {Object} httpServer - HTTP server instance
  */
-import { createAdapter } from '@socket.io/redis-adapter';
-import { getRedisClient } from '../utils/redis.js';
-
-export function initializeSocketIO(httpServer) {
+export async function initializeSocketIO(httpServer) {
   io = new Server(httpServer, {
     cors: {
       origin: process.env.FRONTEND_URL || 'http://localhost:5173',
@@ -230,6 +229,8 @@ export function initializeSocketIO(httpServer) {
 
   const pubClient = getRedisClient();
   const subClient = pubClient.duplicate();
+  // Ensure both pub/sub clients are connected before wiring the adapter
+  await Promise.all([pubClient.connect?.(), subClient.connect?.()].filter(Boolean));
   io.adapter(createAdapter(pubClient, subClient));
 
   // Connection auth middleware — checks handshake auth token
