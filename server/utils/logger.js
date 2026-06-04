@@ -3,13 +3,14 @@
  * Structured logging for all backend operations
  */
 
-import winston from "winston";
-import path from "path";
-import DailyRotateFile from "winston-daily-rotate-file";
+import winston from 'winston';
+import { appContext } from '../config/appContext.js';
+import path from 'path';
+import DailyRotateFile from 'winston-daily-rotate-file';
 
 // Create logs directory if it doesn't exist
-import fs from "fs";
-const logsDir = path.join(process.cwd(), "logs");
+import fs from 'fs';
+const logsDir = path.join(process.cwd(), 'logs');
 if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
@@ -25,11 +26,11 @@ const levels = {
 
 // Define colors for console output
 const colors = {
-  error: "red",
-  warn: "yellow",
-  info: "green",
-  http: "magenta",
-  debug: "white",
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'white',
 };
 
 winston.addColors(colors);
@@ -92,7 +93,7 @@ const transports = [
 
 // Create logger instance
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || "info",
+  level: process.env.LOG_LEVEL || 'info',
   levels,
   format: baseFileFormat, //  FIX: Use the uncolorized base format here
   transports,
