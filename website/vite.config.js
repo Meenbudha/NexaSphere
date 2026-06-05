@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { sentryVitePlugin } from '@sentry/vite-plugin';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
   // Aliases for next/image and next/dynamic shims used in the website source
@@ -22,6 +23,13 @@ export default defineConfig({
       // Don't fail build if Sentry token is not set
       silent: true,
     }),
+    process.env.ANALYZE === 'true' &&
+      visualizer({
+        filename: 'bundle-report.html',
+        open: false,
+        gzipSize: true,
+        brotliSize: true,
+      }),
     VitePWA({
       disable: process.env.DISABLE_PWA === 'true',
       registerType: 'autoUpdate',
@@ -57,36 +65,44 @@ export default defineConfig({
     include: ['idb-keyval', 'dompurify'],
   },
   build: {
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 400,
     rollupOptions: {
       // Ensure all deps are bundled (not externalized)
       external: [],
       output: {
         manualChunks(id) {
-          if (id.includes("node_modules")) {
-            if (id.includes("react") || id.includes("react-dom") || id.includes("react-router-dom")) {
-              return "vendor-react";
+          if (id.includes('node_modules')) {
+            if (
+              id.includes('react') ||
+              id.includes('react-dom') ||
+              id.includes('react-router-dom')
+            ) {
+              return 'vendor-react';
             }
-            if (id.includes("framer-motion")) {
-              return "vendor-framer";
+            if (id.includes('framer-motion')) {
+              return 'vendor-framer';
             }
-            if (id.includes("recharts")) {
-              return "vendor-recharts";
+            if (id.includes('recharts')) {
+              return 'vendor-recharts';
             }
-            if (id.includes("@tensorflow/tfjs")) {
-              return "vendor-tensorflow";
+            if (id.includes('@tensorflow/tfjs')) {
+              return 'vendor-tensorflow';
             }
-            if (id.includes("@fullcalendar")) {
-              return "vendor-fullcalendar";
+            if (id.includes('@fullcalendar')) {
+              return 'vendor-fullcalendar';
             }
-            if (id.includes("@sentry")) {
-              return "vendor-sentry";
+            if (id.includes('@sentry')) {
+              return 'vendor-sentry';
             }
-            if (id.includes("jspdf") || id.includes("html2canvas") || id.includes("dompurify")) {
-              return "vendor-pdf";
+            if (id.includes('jspdf') || id.includes('html2canvas') || id.includes('dompurify')) {
+              return 'vendor-pdf';
             }
-            if (id.includes("i18next") || id.includes("react-i18next") || id.includes("i18next-browser-languagedetector")) {
-              return "vendor-i18n";
+            if (
+              id.includes('i18next') ||
+              id.includes('react-i18next') ||
+              id.includes('i18next-browser-languagedetector')
+            ) {
+              return 'vendor-i18n';
             }
           }
         },

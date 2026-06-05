@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { AdminIcon } from './AdminIcon';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 /* Public website URL */
 const WEBSITE_URL =
