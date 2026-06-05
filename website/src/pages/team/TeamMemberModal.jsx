@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 function CopyPopup({ value, onClose }) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef(null);
+
   const handleCopy = () => {
     navigator.clipboard.writeText(value).then(() => {
       setCopied(true);
@@ -16,7 +17,6 @@ function CopyPopup({ value, onClose }) {
     const handler = (e) => {
       if (!e.target.closest('.copy-popup')) onClose();
     };
-
     timeoutRef.current = setTimeout(() => {
       document.addEventListener('click', handler);
     }, 0);
@@ -25,7 +25,6 @@ function CopyPopup({ value, onClose }) {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-
       document.removeEventListener('click', handler);
     };
   }, [onClose]);
