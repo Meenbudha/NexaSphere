@@ -71,25 +71,37 @@ const allowedOrigins = process.env.CORS_ORIGIN.split(',')
   .map((s) => s.trim())
   .filter(Boolean);
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: [
-        "'self'",
-        process.env.FRONTEND_URL || "http://localhost:5173",
-        `wss://${process.env.DOMAIN || 'localhost'}`,
-      ],
-      objectSrc: ["'none'"],
-      upgradeInsecureRequests: [],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", 'https://challenges.cloudflare.com'],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
+        imgSrc: [
+          "'self'",
+          'data:',
+          'https:',
+          'https://api.dicebear.com',
+          'https://images.unsplash.com',
+        ],
+        connectSrc: [
+          "'self'",
+          'https://challenges.cloudflare.com',
+          'https://*.ingest.sentry.io',
+          'https://*.ingest.us.sentry.io',
+          process.env.FRONTEND_URL || 'http://localhost:5173',
+          `wss://${process.env.DOMAIN || 'localhost'}`,
+        ],
+        frameSrc: ["'self'", 'https://challenges.cloudflare.com', 'https://maps.google.com'],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
     },
-  },
-  crossOriginEmbedderPolicy: false,
-}));
+    crossOriginEmbedderPolicy: false,
+  })
+);
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 app.use(tracingMiddleware);
