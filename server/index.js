@@ -226,6 +226,7 @@ app.use(tracingMiddleware);
 
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(xssSanitizer);
 app.use(morgan('combined'));
 app.use(performanceMonitor);
 app.use(cookieParser());
